@@ -1,0 +1,21 @@
+<div id="mpvc-root">
+  <link rel="stylesheet" href="/ui/modules/apps/MPVC/app.css"/>
+  <div class="pv-bar">
+
+    <button class="pv-btn"
+            ng-class="{'pv-active-talk': mode === 'talk'}"
+            ng-click="talkToggle()"
+            title="Talk & Listen">
+      <span class="pv-icon">🎤</span>
+      <span class="pv-count" ng-if="nearbyCount > 0">{{nearbyCount}}</span>
+    </button>
+
+    <button class="pv-btn"
+            ng-class="{'pv-active-listen': mode === 'listen'}"
+            ng-click="listenToggle()"
+            title="Listen Only">
+      <span class="pv-icon">🔊</span>
+    </button>
+
+  </div>
+</div>

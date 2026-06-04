@@ -1,0 +1,16 @@
+{
+  "domElement": "<mpvc></mpvc>",
+  "name": "MPVC",
+  "types": ["ui.apps.categories.multiplayer"],
+  "description": "Proximity Voice Chat",
+  "css": {
+    "width": "100px",
+    "height": "36px",
+    "bottom": "200px",
+    "left": "20px",
+    "position": "absolute"
+  },
+  "author": "5DROR5",
+  "version": "1.0.0",
+  "directive": "mpvc"
+}
