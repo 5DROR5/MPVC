@@ -100,7 +100,6 @@ Download **MPVC.exe** from the [Releases](../../releases) page and run it before
 
 > **Windows SmartScreen warning:** MPVC.exe is unsigned, so Windows may show a security prompt on first run.  
 > Click **More info → Run anyway** to proceed.  
-> You can verify the file on [VirusTotal](https://www.virustotal.com) before running.
 
 ### 2. Add the in-game app
 
