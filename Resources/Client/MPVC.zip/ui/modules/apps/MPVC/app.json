@@ -4,13 +4,15 @@
   "types": ["ui.apps.categories.multiplayer"],
   "description": "Proximity Voice Chat",
   "css": {
-    "width": "100px",
+    "bottom": "",
     "height": "36px",
-    "bottom": "200px",
-    "left": "20px",
-    "position": "absolute"
+    "left": "",
+    "position": "absolute",
+    "right": "400px",
+    "top": "0px",
+    "width": "100px"
   },
   "author": "5DROR5",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "directive": "mpvc"
 }

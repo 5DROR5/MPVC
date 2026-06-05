@@ -5,28 +5,220 @@
 }
 
 .pv-bar {
+  position: relative;
   display: inline-flex;
   gap: 4px;
 }
 
 .pv-btn {
+  position: relative;
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  background: rgba(0, 0, 0, 0.5);
-  border: 1px solid transparent;
-  border-radius: 6px;
-  padding: 4px 8px;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  background: transparent;
+  border: 2px solid;
+  border-radius: 8px;
   cursor: pointer;
   opacity: 0.6;
-  transition: opacity 0.15s, border-color 0.15s;
   pointer-events: auto;
+  transition: opacity 0.15s, background 0.15s;
 }
 
-.pv-btn:hover { opacity: 0.85; }
+.pv-btn:hover { opacity: 0.9; }
+.pv-btn-talk   { border-color: #4caf50; }
+.pv-btn-listen { border-color: #ff9800; }
+.pv-btn-talk.pv-active-talk     { opacity: 1; background: rgba(76,175,80,0.18); }
+.pv-btn-listen.pv-active-listen { opacity: 1; background: rgba(255,152,0,0.18); }
 
-.pv-btn.pv-active-talk   { opacity: 1; border-color: #4caf50; }
-.pv-btn.pv-active-listen { opacity: 1; border-color: #2196f3; }
+.pv-icon { font-size: 15px; }
 
-.pv-icon  { font-size: 16px; }
-.pv-count { color: #fff; font-size: 11px; font-family: monospace; }
+.pv-badge {
+  position: absolute;
+  bottom: 0px;
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 13px;
+  height: 13px;
+  padding: 0 2px;
+  background: #e53935;
+  color: #fff;
+  border-radius: 50%;
+  font-size: 9px;
+  font-family: monospace;
+  font-weight: bold;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.mpvc-speakers {
+  position: fixed;
+  top: 40px;
+  right: 400px;
+  min-width: 100px;
+  pointer-events: auto;
+  z-index: 1000;
+}
+
+.mpvc-speaker {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 1px 0;
+  font-family: sans-serif;
+  font-size: 13px;
+  color: rgba(255,255,255,0.5);
+  cursor: pointer;
+  transition: color 0.12s, font-weight 0.12s;
+}
+
+.mpvc-speaker.mpvc-mic-on {
+  color: rgba(76,175,80,0.8);
+}
+
+.mpvc-speaker.mpvc-muted {
+  color: rgba(255,255,255,0.22);
+  text-decoration: line-through;
+}
+
+.mpvc-speaker.mpvc-speaking {
+  color: rgba(255,255,255,0.92);
+  font-weight: bold;
+  text-shadow: 0 0 6px rgba(255,255,255,0.25);
+}
+
+.mpvc-sdot { font-size: 7px; }
+
+.mpvc-card {
+  position: fixed;
+  top: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 310px;
+  padding: 12px 14px 14px;
+  background: rgba(20,20,20,0.92);
+  border: 1px solid #383838;
+  border-radius: 9px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.45);
+  font-family: sans-serif;
+  font-size: 13px;
+  color: #ddd;
+  pointer-events: auto;
+  z-index: 1500;
+  animation: mpvc-drop 0.25s ease;
+}
+
+@keyframes mpvc-drop {
+  from { opacity: 0; transform: translateX(-50%) translateY(-14px); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+.mpvc-c-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mpvc-c-header {
+  margin-bottom: 8px;
+  color: #eee;
+}
+
+.mpvc-c-text {
+  font-size: 12px;
+  line-height: 1.55;
+  color: #bbb;
+  margin: 0 0 8px;
+}
+
+.mpvc-c-text strong { color: #e0e0e0; }
+
+.mpvc-c-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #888;
+  cursor: pointer;
+  user-select: none;
+  margin-bottom: 10px;
+}
+
+.mpvc-c-check input[type="checkbox"] {
+  accent-color: #2196f3;
+  cursor: pointer;
+}
+
+.mpvc-c-actions {
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.mpvc-c-downloads {
+  display: flex;
+  gap: 8px;
+  margin: 6px 0 8px;
+}
+
+.mpvc-c-note {
+  font-size: 11px;
+  color: #777;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.mpvc-c-note strong { color: #999; }
+
+.mpvc-x {
+  background: none;
+  border: none;
+  color: #555;
+  font-size: 17px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.15s;
+}
+
+.mpvc-x:hover { color: #bbb; }
+
+.mpvc-btn {
+  border: none;
+  border-radius: 5px;
+  padding: 6px 14px;
+  font-size: 12px;
+  font-family: sans-serif;
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+
+.mpvc-btn:hover { opacity: 0.8; }
+
+.mpvc-btn-no {
+  background: #2a2a2a;
+  color: #999;
+  border: 1px solid #444;
+}
+
+.mpvc-btn-yes {
+  background: #2196f3;
+  color: #fff;
+}
+
+.mpvc-dl-btn {
+  flex: 1;
+  padding: 8px 10px;
+  background: #252525;
+  color: #ddd;
+  border: 1px solid #404040;
+  border-radius: 6px;
+  font-size: 12px;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.mpvc-dl-btn:hover     { background: #2e2e2e; opacity: 1; }
+.mpvc-dl-discord       { border-color: #5865f2; }
+.mpvc-dl-discord:hover { border-color: #7984f5; }

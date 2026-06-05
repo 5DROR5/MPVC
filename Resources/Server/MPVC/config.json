@@ -1,5 +1,6 @@
 {
   "max_distance": 150,
   "fade_start": 50,
-  "master_volume": 1.0
+  "master_volume": 1.0,
+  "force_ui_layout": true
 }

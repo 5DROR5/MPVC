@@ -1,21 +1,72 @@
 <div id="mpvc-root">
   <link rel="stylesheet" href="/ui/modules/apps/MPVC/app.css"/>
-  <div class="pv-bar">
 
-    <button class="pv-btn"
+  <div class="mpvc-speakers" ng-if="speakersList.length > 0">
+    <div class="mpvc-speaker"
+         ng-class="{'mpvc-speaking': localSpeaking, 'mpvc-mic-on': mode === 'talk'}">
+      <span class="mpvc-sdot">●</span>
+      <span>You</span>
+    </div>
+    <div class="mpvc-speaker"
+         ng-class="{'mpvc-speaking': p.speaking, 'mpvc-muted': p.muted, 'mpvc-mic-on': p.micOn}"
+         ng-click="toggleMute(p.pid)"
+         ng-repeat="p in speakersList">
+      <span class="mpvc-sdot">●</span>
+      <span>{{p.name}}</span>
+    </div>
+  </div>
+
+  <div class="pv-bar">
+    <button class="pv-btn pv-btn-talk"
             ng-class="{'pv-active-talk': mode === 'talk'}"
             ng-click="talkToggle()"
             title="Talk & Listen">
-      <span class="pv-icon">🎤</span>
-      <span class="pv-count" ng-if="nearbyCount > 0">{{nearbyCount}}</span>
+      <span class="pv-icon">🎙️</span>
     </button>
-
-    <button class="pv-btn"
+    <button class="pv-btn pv-btn-listen"
             ng-class="{'pv-active-listen': mode === 'listen'}"
             ng-click="listenToggle()"
             title="Listen Only">
       <span class="pv-icon">🔊</span>
     </button>
+    <span class="pv-badge" ng-if="nearbyCount > 0">{{nearbyCount}}</span>
+  </div>
+
+  <div class="mpvc-card" ng-if="showPrompt || showDownloads">
+
+    <div ng-if="showPrompt">
+      <div class="mpvc-c-row mpvc-c-header">
+        <span>🎙️ <strong>Proximity Voice Chat</strong></span>
+        <button class="mpvc-x" ng-click="promptNo()" title="Dismiss">×</button>
+      </div>
+      <p class="mpvc-c-text">
+        This server supports optional proximity voice chat.<br>
+        Run <strong>MicBridge</strong> on your PC to participate.
+      </p>
+      <label class="mpvc-c-check">
+        <input type="checkbox" ng-model="dontRemind" />
+        Don't remind me again
+      </label>
+      <div class="mpvc-c-row mpvc-c-actions">
+        <button class="mpvc-btn mpvc-btn-no"  ng-click="promptNo()">No thanks</button>
+        <button class="mpvc-btn mpvc-btn-yes" ng-click="promptYes()">Download ↓</button>
+      </div>
+    </div>
+
+    <div ng-if="showDownloads">
+      <div class="mpvc-c-row mpvc-c-header">
+        <span>⬇️ <strong>Download MicBridge</strong></span>
+        <button class="mpvc-x" ng-click="closeDownloads()">×</button>
+      </div>
+      <div class="mpvc-c-downloads">
+        <button class="mpvc-btn mpvc-dl-btn" ng-click="downloadGithub()">⬇ GitHub</button>
+        <button class="mpvc-btn mpvc-dl-btn mpvc-dl-discord"
+                ng-if="discordEnabled"
+                ng-click="downloadDiscord()">💬 Discord</button>
+      </div>
+      <p class="mpvc-c-note">Run <strong>MPVC.exe</strong> before reconnecting.</p>
+    </div>
 
   </div>
+
 </div>
