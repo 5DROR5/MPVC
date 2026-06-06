@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-# MPVC Mic Bridge
+# MPVC Mic Bridge — v1.0.2
 # Created by rtacyyv and 5DROR5
 # License: MIT — https://opensource.org/licenses/MIT
 
-import asyncio, sys, os, queue, threading, subprocess, argparse
+import asyncio, sys, os, queue, threading, subprocess, argparse, ctypes
 from pathlib import Path
 
 import numpy as np
@@ -19,6 +19,7 @@ _audio_q      = queue.Queue(maxsize=10)
 _clients: set = set()
 _loop         = None
 _tray         = None
+_stream       = None
 
 # ── Audio callback ────────────────────────────────────────────────────────────
 
@@ -30,6 +31,35 @@ def _on_audio(indata: np.ndarray, frames: int, time, status) -> None:
     except queue.Full:
         pass
 
+# ── Mic stream lifecycle ──────────────────────────────────────────────────────
+
+def _start_stream(device: int | None) -> None:
+    global _stream
+    if _stream is not None:
+        return
+    _stream = sd.InputStream(
+        device=device, samplerate=SAMPLE_RATE,
+        channels=CHANNELS, dtype=DTYPE,
+        blocksize=CHUNK, callback=_on_audio,
+    )
+    _stream.start()
+
+def _stop_stream() -> None:
+    global _stream
+    if _stream is None:
+        return
+    try:
+        _stream.stop()
+        _stream.close()
+    except Exception:
+        pass
+    _stream = None
+    while True:
+        try:
+            _audio_q.get_nowait()
+        except queue.Empty:
+            break
+
 # ── WebSocket ─────────────────────────────────────────────────────────────────
 
 async def _safe_send(ws, data: bytes) -> None:
@@ -40,7 +70,7 @@ async def _broadcast_loop() -> None:
     while True:
         try:
             pcm = await loop.run_in_executor(
-                None, lambda: _audio_q.get(timeout=0.05))
+                None, lambda: _audio_q.get(timeout=0.001))
         except queue.Empty:
             continue
         if not _clients:
@@ -55,13 +85,17 @@ async def _broadcast_loop() -> None:
                 dead.add(ws)
         _clients.difference_update(dead)
 
-async def _handler(ws) -> None:
+async def _handler(ws, device: int | None) -> None:
     _clients.add(ws)
+    if len(_clients) == 1:
+        _start_stream(device)
     _on_client_change()
     try:
         await ws.wait_closed()
     finally:
         _clients.discard(ws)
+        if not _clients:
+            _stop_stream()
         _on_client_change()
 
 def _on_client_change() -> None:
@@ -88,11 +122,11 @@ def _watch_beammp(proc: subprocess.Popen, icon) -> None:
 # ── Async core ────────────────────────────────────────────────────────────────
 
 async def _serve(device: int | None, port: int) -> None:
-    with sd.InputStream(device=device, samplerate=SAMPLE_RATE,
-                        channels=CHANNELS, dtype=DTYPE,
-                        blocksize=CHUNK, callback=_on_audio):
-        async with serve(_handler, "localhost", port):
-            await _broadcast_loop()
+    async def _h(ws):
+        await _handler(ws, device)
+
+    async with serve(_h, "localhost", port):
+        await _broadcast_loop()
 
 def _run_async(device: int | None, port: int) -> None:
     global _loop
@@ -117,6 +151,47 @@ def _run_console(device: int | None, port: int) -> None:
         asyncio.run(_serve(chosen, port))
     except KeyboardInterrupt:
         print("\nStopped.")
+
+# ── First-run setup ───────────────────────────────────────────────────────────
+
+def _add_to_startup() -> None:
+    startup = (Path(os.environ.get("APPDATA", ""))
+               / "Microsoft" / "Windows" / "Start Menu" / "Programs" / "Startup")
+    exe = Path(sys.executable) if getattr(sys, "frozen", False) else Path(sys.argv[0]).resolve()
+    lnk = startup / "MPVC.lnk"
+    script = (
+        f'$ws = New-Object -ComObject WScript.Shell; '
+        f'$s = $ws.CreateShortcut("{lnk}"); '
+        f'$s.TargetPath = "{exe}"; '
+        f'$s.Arguments = "--no-beammp"; '
+        f'$s.WorkingDirectory = "{exe.parent}"; '
+        f'$s.Save()'
+    )
+    try:
+        subprocess.run(
+            ["powershell", "-NoProfile", "-NonInteractive", "-Command", script],
+            capture_output=True, timeout=10,
+        )
+    except Exception:
+        pass
+
+def _first_run_setup() -> None:
+    flag = Path(os.environ.get("APPDATA", "")) / "MPVC" / "setup_done"
+    if flag.exists():
+        return
+    flag.parent.mkdir(parents=True, exist_ok=True)
+    flag.touch()
+    result = ctypes.windll.user32.MessageBoxW(
+        0,
+        "Would you like MPVC to start automatically with Windows?\n\n"
+        "MPVC will run silently in the system tray and activate the microphone "
+        "only when you press Talk in-game.\n\n"
+        "Note: this will take effect after the next Windows restart.",
+        "MPVC \u2014 Setup",
+        0x00000004 | 0x00000040,
+    )
+    if result == 6:
+        _add_to_startup()
 
 # ── Tray mode ─────────────────────────────────────────────────────────────────
 
@@ -192,9 +267,10 @@ def main() -> None:
     args = parser.parse_args()
 
     if not args.console:
+        _first_run_setup()
         try:
             import pystray
-            from PIL import Image  # noqa: F401
+            from PIL import Image
             _run_tray(args.device, args.port, not args.no_beammp)
             return
         except ImportError:

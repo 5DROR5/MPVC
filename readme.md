@@ -26,7 +26,7 @@ MPVC uses a hybrid architecture combining a local mic bridge, WebRTC peer audio,
 
 | Component | Role |
 |-----------|------|
-| **MPVC.exe** (MicBridge) | Captures microphone, serves raw PCM over `ws://localhost:7777` |
+| **MPVC.exe** (MicBridge) | Captures microphone on demand and serves raw PCM over `ws://localhost:7777` — mic is only active while Talk is pressed |
 | **BeamNG UI mod** | Connects to MicBridge, manages WebRTC peer connections, fades volume by distance |
 | **BeamNG Lua extension** | Calculates vehicle distances every 0.5s, routes signaling events to UI |
 | **BeamMP server plugin** | Relays WebRTC offer/answer/ICE between players, pushes config on join |
@@ -68,7 +68,7 @@ Each release includes two files:
 | File | For | Instructions |
 |------|-----|--------------|
 | `Resources.zip` | Server owners | Extract into your BeamMP server's root directory |
-| `MPVC.exe` | Players | Launch BeamMP via the extension |
+| `MPVC.exe` | Players | Run before or alongside BeamMP |
 
 > MicBridge source code is available in the `MicBridge/` directory for those who prefer to build from source.
 
@@ -101,13 +101,21 @@ Each release includes two files:
 Download **MPVC.exe** from the [Releases](../../releases) page and run it before launching BeamMP.
 
 - **No installation required** — portable, single executable
-- Appears in the system tray (⚫ gray = idle, 🟢 green = connected to game)
+- Appears in the system tray (⚫ gray = idle, 🟢 green = mic active)
+- **Microphone is only active while Talk is pressed in-game** — silent at all other times
+- On first launch, a setup dialog will ask if you'd like MPVC to start automatically with Windows
 - Automatically launches BeamMP Launcher on startup
 - Closes automatically when BeamMP Launcher is closed
 
 > **Windows SmartScreen / antivirus warning:** MPVC.exe is unsigned and built with PyInstaller,
 > which causes some antivirus engines to flag it as suspicious — this is a known false positive.
 > Click **More info → Run anyway** to proceed, or build from source to verify the code yourself.
+
+#### Optional — Run automatically with Windows
+
+On first launch, MPVC will ask if you'd like it to start automatically with Windows. Click **Yes** and it will add itself to your startup folder automatically.
+
+> This takes effect after the next Windows restart.
 
 ### 2. In-game setup
 
@@ -121,8 +129,8 @@ Two buttons will appear in your HUD:
 
 | Button | Mode | Behavior |
 |--------|------|----------|
-| 🎙️ | Talk & Listen | Sends your mic audio and receives nearby players |
-| 🔊 | Listen Only | Receives nearby players, mic is muted |
+| 🎙️ | Talk & Listen | Activates microphone, sends your audio and receives nearby players |
+| 🔊 | Listen Only | Receives nearby players without activating your microphone |
 
 Clicking an active button again deactivates that mode.
 
@@ -197,7 +205,13 @@ A `dist\` folder has been created inside `MicBridge/` — move `MPVC.exe` from t
 The build folder you downloaded from GitHub is no longer needed and can be deleted.
 
 </details>
+---
 
+## Credits
+
+| | |
+|-|-|
+| **MicBridge** | rtacyyv |
 ---
 
 ## License

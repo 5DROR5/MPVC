@@ -1,6 +1,6 @@
 -- =============================================================================
 -- MPVC — Proximity Voice Chat  |   Client Extension
--- Version: 1.0.1               |   Author: 5DROR5
+-- Version: 1.0.2               |   Author: 5DROR5
 -- License: AGPL-3.0 — https://www.gnu.org/licenses/agpl-3.0.html
 -- =============================================================================
 

@@ -1,6 +1,6 @@
 // =============================================================================
 // MPVC — Proximity Voice Chat  |   UI Controller
-// Version: 1.0.1               |   Author: 5DROR5
+// Version: 1.0.2               |   Author: 5DROR5
 // License: AGPL-3.0 — https://www.gnu.org/licenses/agpl-3.0.html
 // =============================================================================
 
@@ -156,7 +156,8 @@ angular.module('beamng.apps')
       }
 
       function probebridge() {
-        if (localStorage.getItem(DISMISS_KEY) === '1') { initAudio(); return; }
+        initSession();
+        if (localStorage.getItem(DISMISS_KEY) === '1') return;
         var ws, done = false;
         try { ws = new WebSocket(BRIDGE_URL); }
         catch (e) { $scope.$applyAsync(function () { $scope.showPrompt = true; }); return; }
@@ -169,7 +170,7 @@ angular.module('beamng.apps')
 
         ws.onopen = function () {
           if (done) return; done = true;
-          clearTimeout(timer); ws.close(); initAudio();
+          clearTimeout(timer); ws.close();
         };
         ws.onerror = function () {
           if (done) return; done = true;
@@ -198,6 +199,42 @@ angular.module('beamng.apps')
         if (peers[pid] && peers[pid].audioEl)
           peers[pid].audioEl.volume = mutedPeers[pid] ? 0 : targetVol(peers[pid].distance);
       };
+
+      function initSession() {
+        try { audioCtx = new AudioContext(); } catch (e) { return; }
+        if (window.bngApi && typeof window.bngApi.engineLua === 'function')
+          window.bngApi.engineLua('mpvcHello()');
+      }
+
+      function connectMic() {
+        MicBridge.connect()
+          .then(function (stream) {
+            if ($scope.mode !== 'talk') { MicBridge.disconnect(); return; }
+            localStream = stream;
+            unmuteStream();
+            Object.keys(peers).forEach(function (pidStr) {
+              var p = peers[parseInt(pidStr)];
+              if (!p || !p.pc || p.pc.signalingState === 'closed') return;
+              var audioSender = p.pc.getSenders().filter(function (s) {
+                return s.track && s.track.kind === 'audio';
+              })[0];
+              if (audioSender) {
+                audioSender.replaceTrack(localStream.getAudioTracks()[0]).catch(function () {});
+              } else {
+                localStream.getTracks().forEach(function (t) { p.pc.addTrack(t, localStream); });
+              }
+            });
+            if ($scope.mode === 'talk') broadcastMicStatus(true);
+          })
+          .catch(function () {
+            $scope.$applyAsync(function () { $scope.mode = null; });
+          });
+      }
+
+      function disconnectMic() {
+        MicBridge.disconnect();
+        localStream = null;
+      }
 
       setInterval(function () {
         var now = Date.now();
@@ -283,9 +320,16 @@ angular.module('beamng.apps')
 
       $scope.talkToggle = function () {
         if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
-        $scope.mode = ($scope.mode === 'talk') ? null : 'talk';
-        applyMode();
-        broadcastMicStatus($scope.mode === 'talk');
+        if ($scope.mode === 'talk') {
+          $scope.mode = null;
+          applyMode();
+          broadcastMicStatus(false);
+          disconnectMic();
+        } else {
+          $scope.mode = 'talk';
+          applyMode();
+          connectMic();
+        }
       };
 
       $scope.listenToggle = function () {
@@ -293,25 +337,11 @@ angular.module('beamng.apps')
         var wasInTalk = $scope.mode === 'talk';
         $scope.mode   = ($scope.mode === 'listen') ? null : 'listen';
         applyMode();
-        if (wasInTalk) broadcastMicStatus(false);
+        if (wasInTalk) {
+          broadcastMicStatus(false);
+          disconnectMic();
+        }
       };
-
-      function initAudio() {
-        try { audioCtx = new AudioContext(); } catch (e) { return; }
-        MicBridge.connect()
-          .then(function (stream) {
-            localStream = stream;
-            muteStream();
-            Object.keys(peers).forEach(function (pidStr) {
-              var p = peers[parseInt(pidStr)];
-              if (p && p.pc && p.pc.signalingState !== 'closed')
-                localStream.getTracks().forEach(function (t) { p.pc.addTrack(t, localStream); });
-            });
-            if (window.bngApi && typeof window.bngApi.engineLua === 'function')
-              window.bngApi.engineLua('mpvcHello()');
-          })
-          .catch(function () {});
-      }
 
       function createPeer(pid) {
         if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
