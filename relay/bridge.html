@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MPVC Voice Bridge</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: sans-serif;
+    background: #07070f;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+  }
+
+  .card {
+    background: rgba(255, 255, 255, 0.04);
+    border: 0.5px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 32px 28px;
+    width: 100%;
+    max-width: 380px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 18px;
+  }
+
+  .logo {
+    max-width: 260px;
+    width: 100%;
+    height: auto;
+  }
+
+  .divider {
+    width: 100%;
+    height: 0.5px;
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .status-row {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+  }
+
+  .dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  #status-text {
+    font-size: 15px;
+    font-weight: 500;
+  }
+
+  .ok   { color: #4ADE80; }
+  .err  { color: #f87171; }
+  .wait { color: #fbbf24; }
+
+  #mic-hint {
+    background: rgba(251, 191, 36, 0.07);
+    border: 0.5px solid rgba(251, 191, 36, 0.2);
+    border-radius: 8px;
+    padding: 10px 16px;
+    color: rgba(255, 255, 255, 0.4);
+    font-size: 13px;
+    line-height: 1.6;
+  }
+
+  #mic-hint strong {
+    color: rgba(255, 255, 255, 0.75);
+    font-weight: 500;
+  }
+
+  #minimize-hint {
+    color: rgba(255, 255, 255, 0.2);
+    font-size: 12px;
+  }
+
+  #unavailable-box {
+    background: rgba(248, 113, 113, 0.06);
+    border: 0.5px solid rgba(248, 113, 113, 0.2);
+    border-radius: 8px;
+    padding: 14px 16px;
+    color: rgba(255, 255, 255, 0.55);
+    font-size: 13px;
+    line-height: 1.7;
+    text-align: left;
+  }
+
+  #unavailable-box strong {
+    color: rgba(255, 255, 255, 0.85);
+    font-weight: 500;
+  }
+
+  #unavailable-box a {
+    color: #60a5fa;
+    text-decoration: none;
+  }
+
+  #unavailable-box a:hover {
+    text-decoration: underline;
+  }
+</style>
+</head>
+<body>
+<div class="card">
+  <img src="MPVC.png" alt="MPVC" class="logo">
+  <div class="divider"></div>
+  <div class="status-row">
+    <div class="dot" id="dot"></div>
+    <span id="status-text" class="wait">Connecting...</span>
+  </div>
+  <div id="mic-hint" style="display:none">
+    Click <strong>Allow</strong> when the browser asks for microphone access
+  </div>
+  <p id="minimize-hint" style="display:none">You can minimize this tab</p>
+  <div id="unavailable-box" style="display:none">
+    <strong>Browser voice is not available on this server.</strong><br><br>
+    To use voice chat, install <strong>MPVC.exe</strong> — a lightweight app that runs in the system tray and connects automatically.<br><br>
+    👉 <a href="https://github.com/5DROR5/MPVC/releases" target="_blank">Download from GitHub</a>
+  </div>
+</div>
+
+<script>
+var params  = new URLSearchParams(location.search);
+var id      = params.get('id');
+var token   = params.get('token') || '';
+
+var MAX_RETRIES  = 3;
+var retryCount   = 0;
+var stopped      = false;
+
+function setStatus(text, state) {
+    var txt  = document.getElementById('status-text');
+    var dot  = document.getElementById('dot');
+    var hint = document.getElementById('mic-hint');
+    var min  = document.getElementById('minimize-hint');
+    txt.textContent  = text;
+    txt.className    = state;
+    dot.style.background = state === 'ok' ? '#4ADE80' : state === 'err' ? '#f87171' : '#fbbf24';
+    hint.style.display   = (text === 'Requesting microphone...') ? 'block' : 'none';
+    min.style.display    = (state === 'ok') ? 'block' : 'none';
+}
+
+function showUnavailable() {
+    stopped = true;
+    document.getElementById('status-text').style.display = 'none';
+    document.getElementById('dot').style.display         = 'none';
+    document.getElementById('unavailable-box').style.display = 'block';
+}
+
+if (!id) { setStatus('Error: missing id', 'err'); stopped = true; }
+
+var stream = null;
+var ws     = null;
+var pc     = null;
+
+function cleanup() {
+    if (pc) { pc.close(); pc = null; }
+}
+
+function connect() {
+    if (stopped) return;
+    cleanup();
+    setStatus('Connecting...', 'wait');
+
+    var wsUrl = 'wss://mpvc.ddns.net/voice-ws?id=' + id + '&role=chrome' + (token ? '&token=' + token : '');
+    ws = new WebSocket(wsUrl);
+
+    ws.onopen = function() {
+        retryCount = 0;
+        setStatus('Requesting microphone...', 'wait');
+
+        var doConnect = function(s) {
+            stream = s;
+            pc = new RTCPeerConnection({
+                iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+            });
+
+            s.getTracks().forEach(function(t) { pc.addTrack(t, s); });
+
+            pc.onicecandidate = function(e) {
+                if (e.candidate && ws && ws.readyState === WebSocket.OPEN)
+                    ws.send(JSON.stringify({ type: 'ice', candidate: e.candidate }));
+            };
+
+            pc.createOffer()
+              .then(function(o) { return pc.setLocalDescription(o); })
+              .then(function() {
+                  if (ws && ws.readyState === WebSocket.OPEN)
+                      ws.send(JSON.stringify({ type: 'offer', sdp: pc.localDescription }));
+                  setStatus('Voice bridge active ✓', 'ok');
+              }).catch(onErr);
+        };
+
+        if (stream) {
+            doConnect(stream);
+        } else {
+            navigator.mediaDevices.getUserMedia({
+                audio: { sampleRate: 48000, channelCount: 1,
+                         echoCancellation: true, noiseSuppression: true }
+            }).then(doConnect).catch(function(e) {
+                setStatus('Mic error: ' + e.message, 'err');
+            });
+        }
+    };
+
+    ws.onmessage = function(e) {
+        var msg = JSON.parse(e.data);
+        if (!pc) return;
+        if (msg.type === 'answer')
+            pc.setRemoteDescription(new RTCSessionDescription(msg.sdp)).catch(onErr);
+        else if (msg.type === 'ice')
+            pc.addIceCandidate(new RTCIceCandidate(msg.candidate)).catch(function(){});
+    };
+
+    ws.onclose = function(e) {
+        cleanup();
+        if (e.code === 1000) {
+            setStatus('Session ended', 'wait');
+            window.close();
+            return;
+        }
+        if (e.code === 1008) {
+            showUnavailable();
+            return;
+        }
+        retryCount++;
+        if (retryCount >= MAX_RETRIES) {
+            showUnavailable();
+            return;
+        }
+        setStatus('Reconnecting...', 'wait');
+        setTimeout(connect, 2000);
+    };
+
+    ws.onerror = function() {
+        setStatus('Connection error — retrying...', 'err');
+    };
+}
+
+function onErr(e) { console.error('[bridge]', e); }
+
+connect();
+</script>
+</body>
+</html>

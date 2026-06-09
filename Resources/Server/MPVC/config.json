@@ -1,6 +1,11 @@
 {
-  "max_distance": 150,
-  "fade_start": 50,
-  "master_volume": 1.0,
-  "force_ui_layout": true
+  "server_id":          "your_server_id",
+  "relay_url":          "wss://mpvc.ddns.net/voice-ws",
+  "bridge_url":         "https://mpvc.ddns.net/bridge.html",
+  "relay_register_url": "https://mpvc.ddns.net/register",
+  "relay_token":        "your_relay_token",
+  "max_distance":        150,
+  "fade_start":          75,
+  "master_volume":       1.0,
+  "force_ui_layout":     true
 }
