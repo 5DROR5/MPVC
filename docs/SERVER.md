@@ -44,7 +44,7 @@ There are two ways to provide one:
 
 ### Option A — Self-host (recommended, no key required)
 
-The full relay source code is available in the [`Relay/`](MPVC/relay) directory. This option has no restrictions whatsoever and is the preferred approach — you stay in full control of your infrastructure and there are no dependencies on third-party availability.
+The full relay source code is available in the [`Relay/`]([MPVC/relay](https://github.com/5DROR5/MPVC/tree/main/relay)) directory. This option has no restrictions whatsoever and is the preferred approach — you stay in full control of your infrastructure and there are no dependencies on third-party availability.
 
 Setting it up requires a Linux server with a public IP, nginx, and a valid TLS certificate. Straightforward if you're comfortable with server administration.
 
