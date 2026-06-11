@@ -31,6 +31,8 @@
 | `bridge_url` | — | URL of the browser voice bridge page |
 | `relay_token` | — | Auth token for the relay (kept server-side, never sent to clients) |
 | `relay_register_url` | — | Endpoint used to issue per-session bridge tokens |
+| `turn_url` | — | TURN server URL for players behind restrictive NAT |
+| `turn_creds_url` | — | Endpoint used to fetch per-player TURN credentials |
 
 ---
 

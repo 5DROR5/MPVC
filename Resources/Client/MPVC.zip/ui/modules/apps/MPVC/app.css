@@ -70,24 +70,23 @@
   padding: 1px 0;
   font-family: sans-serif;
   font-size: 13px;
-  color: rgba(255,255,255,0.5);
+  color: rgba(255,255,255,0.85);
   cursor: pointer;
-  transition: color 0.12s, font-weight 0.12s;
+  transition: color 0.12s, font-weight 0.12s, opacity 0.12s;
 }
 
-.mpvc-speaker.mpvc-mic-on {
-  color: rgba(76,175,80,0.8);
-}
+.mpvc-speaker.mpvc-idle   { color: rgba(255,255,255,0.85); }
+.mpvc-speaker.mpvc-talk   { color: rgba(76,175,80,0.9);    }
+.mpvc-speaker.mpvc-listen { color: rgba(255,152,0,0.9);    }
 
 .mpvc-speaker.mpvc-muted {
-  color: rgba(255,255,255,0.22);
+  opacity: 0.45;
   text-decoration: line-through;
 }
 
 .mpvc-speaker.mpvc-speaking {
-  color: rgba(255,255,255,0.92);
   font-weight: bold;
-  text-shadow: 0 0 6px rgba(255,255,255,0.25);
+  text-shadow: 0 0 6px rgba(255,255,255,0.35);
 }
 
 .mpvc-sdot { font-size: 7px; }

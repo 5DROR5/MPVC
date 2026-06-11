@@ -3,12 +3,12 @@
 
   <div class="mpvc-speakers" ng-if="speakersList.length > 0">
     <div class="mpvc-speaker"
-         ng-class="{'mpvc-speaking': localSpeaking, 'mpvc-mic-on': mode === 'talk'}">
+         ng-class="['mpvc-' + youState, {'mpvc-speaking': localSpeaking}]">
       <span class="mpvc-sdot">●</span>
       <span>You</span>
     </div>
     <div class="mpvc-speaker"
-         ng-class="{'mpvc-speaking': p.speaking, 'mpvc-muted': p.muted, 'mpvc-mic-on': p.micOn}"
+         ng-class="['mpvc-' + p.state, {'mpvc-muted': p.muted, 'mpvc-speaking': p.speaking}]"
          ng-click="toggleMute(p.pid)"
          ng-repeat="p in speakersList">
       <span class="mpvc-sdot">●</span>

@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
-# MPVC Mic Bridge — v1.0.2
-# Created by rtacyyv and 5DROR5
+# =============================================================================
+# MPVC Mic Bridge  | WebRTC Signaling + TURN Credential Service
+# Version: 1.0.4   | Created by rtacyyv and 5DROR5
 # License: MIT — https://opensource.org/licenses/MIT
+# =============================================================================
 
 import asyncio, sys, os, queue, threading, subprocess, argparse, ctypes
 from pathlib import Path
@@ -17,7 +19,6 @@ DTYPE       = "float32"
 
 _audio_q      = queue.Queue(maxsize=10)
 _clients: set = set()
-_loop         = None
 _tray         = None
 _stream       = None
 
@@ -66,31 +67,32 @@ async def _safe_send(ws, data: bytes) -> None:
     await ws.send(data)
 
 async def _broadcast_loop() -> None:
-    loop = asyncio.get_event_loop()
+    loop = asyncio.get_running_loop()
     while True:
         try:
             pcm = await loop.run_in_executor(
-                None, lambda: _audio_q.get(timeout=0.001))
+                None, lambda: _audio_q.get(timeout=0.020))
         except queue.Empty:
             continue
         if not _clients:
             continue
         dead = set()
+        clients = list(_clients)
         results = await asyncio.gather(
-            *[_safe_send(ws, pcm) for ws in list(_clients)],
+            *[_safe_send(ws, pcm) for ws in clients],
             return_exceptions=True,
         )
-        for ws, r in zip(list(_clients), results):
+        for ws, r in zip(clients, results):
             if isinstance(r, Exception):
                 dead.add(ws)
         _clients.difference_update(dead)
 
 async def _handler(ws, device: int | None) -> None:
     _clients.add(ws)
-    if len(_clients) == 1:
-        _start_stream(device)
-    _on_client_change()
     try:
+        if len(_clients) == 1:
+            _start_stream(device)
+        _on_client_change()
         await ws.wait_closed()
     finally:
         _clients.discard(ws)
@@ -129,10 +131,9 @@ async def _serve(device: int | None, port: int) -> None:
         await _broadcast_loop()
 
 def _run_async(device: int | None, port: int) -> None:
-    global _loop
-    _loop = asyncio.new_event_loop()
-    asyncio.set_event_loop(_loop)
-    _loop.run_until_complete(_serve(device, port))
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+    loop.run_until_complete(_serve(device, port))
 
 # ── Console mode ──────────────────────────────────────────────────────────────
 
