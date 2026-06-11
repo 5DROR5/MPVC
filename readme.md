@@ -75,4 +75,4 @@ MPVC/
 | Component | License |
 |-----------|---------|
 | Server plugin & client mod | [AGPL-3.0](https://www.gnu.org/licenses/agpl-3.0.html) |
-| MicBridge | [MIT](https://opensource.org/licenses/MIT) |
+| MicBridge & voice relay | [MIT](https://opensource.org/licenses/MIT) |
