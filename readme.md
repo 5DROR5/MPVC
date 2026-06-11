@@ -68,7 +68,7 @@ MPVC/
 
 | | |
 |-|-|
-| **MicBridge** | rtacyyv |
+| **MicBridge & voice relay** | rtacyyv |
 
 ## License
 
